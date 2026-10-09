@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CityPulse Pune — Explore, Navigate &amp; Stay Safe</title>
+  <meta name="description" content="CityPulse turns scattered city data into smart, safe and enjoyable exploration of Pune: attractions, heritage, food, safer routes, live weather and citizen reports.">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon.svg" alt="" width="30" height="30">
+      <div>
+        <h1>CityPulse <span>Pune</span></h1>
+        <p>Explore · Experience · Navigate</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="nightToggle" class="chip" aria-pressed="false" title="Night mode changes safety scoring">🌙 Night</button>
+      <div id="wxChip" class="chip chip-static" aria-live="polite">…</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- DISCOVER -->
+    <section id="tab-discover" class="tab active" aria-label="Discover">
+      <div class="searchbar">
+        <input id="q" type="search" placeholder="Search places, food, history…" autocomplete="off" aria-label="Search places">
+        <button id="voiceBtn" class="icon-btn" title="Voice search" aria-label="Voice search">🎤</button>
+      </div>
+      <div id="catChips" class="chips" role="group" aria-label="Category"></div>
+      <div class="filters">
+        <label>Budget
+          <select id="budget">
+            <option value="0">Any</option>
+            <option value="1">₹ Budget</option>
+            <option value="2">₹₹ Mid-range or less</option>
+            <option value="3">₹₹₹ Any (premium too)</option>
+          </select>
+        </label>
+        <label>Sort
+          <select id="sort">
+            <option value="score">Best overall</option>
+            <option value="safety">Safest</option>
+            <option value="cleanliness">Cleanest</option>
+            <option value="affordability">Most affordable</option>
+            <option value="rating">Top rated</option>
+          </select>
+        </label>
+      </div>
+      <div id="planCard" class="card plan"></div>
+      <div id="placeList" class="list"></div>
+    </section>
+
+    <!-- MAP -->
+    <section id="tab-map" class="tab" aria-label="Map and routes">
+      <div class="route-panel card">
+        <h2>Safer route finder</h2>
+        <div class="route-row">
+          <select id="routeFrom" aria-label="From"></select>
+          <select id="routeTo" aria-label="To"></select>
+        </div>
+        <button id="routeBtn" class="btn primary">Compare fastest vs safest route</button>
+        <div id="routeResult" class="route-result" aria-live="polite"></div>
+      </div>
+      <div class="layer-chips chips" id="layerChips"></div>
+      <div id="map" role="application" aria-label="City map"></div>
+      <p class="fine">Routes: OpenStreetMap data via the public OSRM demo server (driving profile). Hazard layer is a sample dataset.</p>
+    </section>
+
+    <!-- SAFETY -->
+    <section id="tab-safety" class="tab" aria-label="Safety">
+      <div class="card">
+        <h2>Safety &amp; security</h2>
+        <p class="muted">Reported unsafe areas, accident-prone zones, congestion and flood spots. Night mode raises the weight of after-dark risks.</p>
+        <div id="safetySummary" class="stat-row"></div>
+      </div>
+      <div id="hazardList" class="list"></div>
+      <div class="card">
+        <h3>Quick safety tips</h3>
+        <ul class="tips">
+          <li>Prefer busy, well-lit roads after dark and share your live location with someone you trust.</li>
+          <li>Avoid underpasses and low-lying roads during heavy rain.</li>
+          <li>Use prepaid autos/cabs at the railway station and bus stands.</li>
+          <li>Emergency numbers (India): <strong>112</strong> (all emergencies), <strong>100</strong> (police), <strong>108</strong> (ambulance), <strong>1091</strong> (women helpline).</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- COMPARE -->
+    <section id="tab-compare" class="tab" aria-label="Compare">
+      <div class="card">
+        <h2>Best vs worst places</h2>
+        <p class="muted">Set what matters to you. Rankings update instantly.</p>
+        <div id="weights" class="weights"></div>
+        <div class="chips" id="cmpCat"></div>
+        <div id="bestWorst" class="two-col"></div>
+      </div>
+      <div class="card">
+        <h2>Compare side by side</h2>
+        <p class="muted">Pick up to 3 places (tap “＋ Compare” on any place in Discover).</p>
+        <div id="compareTable"></div>
+      </div>
+    </section>
+
+    <!-- INSIGHTS -->
+    <section id="tab-insights" class="tab" aria-label="Smart city insights">
+      <div id="liveCard" class="card"></div>
+      <div id="trafficCard" class="card"></div>
+      <div id="analyticsCard" class="card"></div>
+      <div id="sentimentCard" class="card"></div>
+    </section>
+
+    <!-- REPORT -->
+    <section id="tab-report" class="tab" aria-label="Report">
+      <div class="card">
+        <h2>Report something</h2>
+        <p class="muted">Tell the city what you see. Our on-device NLP tags the category and severity; photos, GPS and confirmations raise trust.</p>
+        <form id="reportForm">
+          <label>What’s happening?
+            <textarea id="rText" rows="3" maxlength="400" placeholder="e.g. Streetlights off on the riverside path, very dark at night…" required></textarea>
+          </label>
+          <div id="rPreview" class="preview" aria-live="polite"></div>
+          <div class="row">
+            <button type="button" id="rVoice" class="btn">🎙️ Voice note</button>
+            <label class="btn file">📷 Photo<input id="rPhoto" type="file" accept="image/*" capture="environment" hidden></label>
+          </div>
+          <div id="rMedia" class="media"></div>
+          <label>Location
+            <div class="row">
+              <select id="rArea" aria-label="Nearest area"></select>
+              <button type="button" id="rGps" class="btn">📍 Use GPS</button>
+            </div>
+          </label>
+          <div id="rLoc" class="muted"></div>
+          <button class="btn primary" type="submit">Submit report</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="between"><h2>Latest reports</h2><button id="exportBtn" class="btn small">Export JSON</button></div>
+        <div id="reportList" class="list"></div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <p><strong>CityPulse Pune</strong> — built for the “City Life” challenge. Data shown is a curated sample for demonstration; verify before relying on it. Map © OpenStreetMap contributors · Weather &amp; air quality by Open-Meteo.</p>
+    </footer>
+  </main>
+
+  <nav class="tabbar" aria-label="Sections">
+    <button data-tab="discover" class="active"><span>🧭</span>Discover</button>
+    <button data-tab="map"><span>🗺️</span>Map</button>
+    <button data-tab="safety"><span>🛡️</span>Safety</button>
+    <button data-tab="compare"><span>⚖️</span>Compare</button>
+    <button data-tab="insights"><span>📊</span>Insights</button>
+    <button data-tab="report"><span>📝</span>Report</button>
+  </nav>
+
+  <div id="modal" class="modal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <button id="mClose" class="icon-btn close" aria-label="Close">✕</button>
+      <div id="mBody"></div>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin=""></script>
+  <script src="js/data.js"></script>
+  <script src="js/nlp.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
